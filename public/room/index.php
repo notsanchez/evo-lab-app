@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btn   = document.getElementById('btnStart');
   const stat  = document.getElementById('status');
 
-  const socket = new WebSocket("ws://evo-lab-evo-ws.gn1cmm.easypanel.host");
+  const socket = new WebSocket("wss://evo-lab-evo-ws.gn1cmm.easypanel.host");
   socket.addEventListener('open', () => socket.send(JSON.stringify({ join: room })));
 
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
