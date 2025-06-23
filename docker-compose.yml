@@ -1,25 +1,30 @@
 services:
-  app:
+  web:
     build:
-      context: .            # <-- era `build: .`
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: Dockerfile.web
     restart: unless-stopped
     environment:
       DB_HOST: db
       DB_NAME: evo
       DB_USER: evo
       DB_PASS: senhaforte
-    expose:                 # <-- torna portas visíveis p/ Traefik
+    expose:
       - "80"
-      - "8080"
     labels:
-      # site normal
       - traefik.http.routers.web.rule=Host(`seusite.com`)
       - traefik.http.routers.web.entrypoints=websecure
       - traefik.http.routers.web.tls.certresolver=myresolver
       - traefik.http.services.web.loadbalancer.server.port=80
 
-      # websocket
+  ws:
+    build:
+      context: .
+      dockerfile: Dockerfile.ws
+    restart: unless-stopped
+    expose:
+      - "8080"
+    labels:
       - traefik.http.routers.ws.rule=Host(`ws.seusite.com`)
       - traefik.http.routers.ws.entrypoints=websecure
       - traefik.http.routers.ws.tls.certresolver=myresolver
