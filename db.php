@@ -1,11 +1,29 @@
 <?php
+require_once __DIR__ . '/../vendor/autoload.php';
+
+function env(string $key, string $default = ''): string
+{
+    return $_ENV[$key]          ??
+           $_SERVER[$key]       ??
+           getenv($key)         ??
+           $default;
+}
+
 function db(): PDO
 {
     static $pdo;
     if (!$pdo) {
-        $dsn  = 'mysql:host=infra.brellecare.com.br;port=3308;dbname=evo-lab;charset=utf8mb4';
-        $user = 'mysql';
-        $pass = 'e1a435a3b5046c2714c0';
+        if (file_exists(__DIR__ . '/.env')) {
+            (Dotenv\Dotenv::createImmutable(__DIR__))->load();
+        }
+
+        $host = env('DB_HOST', 'localhost');
+        $port = env('DB_PORT', '3306');
+        $name = env('DB_NAME', 'test');
+        $user = env('DB_USER', 'root');
+        $pass = env('DB_PASS', '');
+
+        $dsn  = "mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4";
 
         $pdo = new PDO($dsn, $user, $pass, [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
