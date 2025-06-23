@@ -95,7 +95,7 @@ tailwind.config = {
       <a href="#" class="block text-center text-xs text-blue-600 hover:underline">Esqueceu sua senha?</a>
     </form>
 
-    <form id="formSignUp" action="register" method="post" class="space-y-4 hidden transition-opacity">
+    <form id="formSignUp" action="/register.php" method="post" class="space-y-4 hidden transition-opacity">
         <div>
           <label class="block text-sm font-medium mb-1">Nome completo</label>
           <input name="first" required

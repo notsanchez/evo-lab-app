@@ -36,7 +36,7 @@
   const room = new URL(location).searchParams.get('room');
   if (!room) { document.body.innerHTML = '<h2 class="text-xl font-semibold text-center mt-20">Sala não informada.</h2>'; return; }
 
-  const socket = new WebSocket("ws://localhost:8080");
+  const socket = new WebSocket("ws://evo-lab-evo-ws.gn1cmm.easypanel.host");
   socket.onopen = () => socket.send(JSON.stringify({ join: room }));
 
   const texto = document.getElementById('texto');
