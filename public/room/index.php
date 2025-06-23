@@ -109,17 +109,10 @@ $active = 'salas';
       </span>
 
       <div class="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
-        <?php
-        $stats = [
-          ['Espectadores','0 ativos'],
-          ['Duração','0:00:00'],
-        ];
-        foreach ($stats as $s): ?>
-          <div class="flex flex-col items-center justify-center h-24 bg-white border border-slate-200 rounded-lg text-sm">
-            <span class="font-medium"><?php echo $s[0]; ?></span>
-            <span class="text-slate-500 text-xs"><?php echo $s[1]; ?></span>
-          </div>
-        <?php endforeach; ?>
+      <div class="flex flex-col items-center justify-center h-24 bg-white border border-slate-200 rounded-lg text-sm">
+            <span class="font-medium">Espectadores</span>
+            <span id="spectatorsCount" class="text-slate-500 text-xs">0 ativos</span>
+      </div>
       </div>
 
       <button
@@ -176,6 +169,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const socket = new WebSocket("wss://evo-lab-evo-ws.gn1cmm.easypanel.host");
   socket.addEventListener('open', () => socket.send(JSON.stringify({ join: room })));
+
+  socket.addEventListener('message', e => {
+        const data = JSON.parse(e.data);
+        if (data.viewers !== undefined) {
+            document.getElementById('spectatorsCount').textContent =
+            (data.viewers - 1) + ((data.viewers - 1) === 1 ? ' ativo' : ' ativos');
+        }
+    });
+
 
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { alert('Browser sem Web Speech API'); btn.disabled = true; return; }

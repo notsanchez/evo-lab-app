@@ -59,25 +59,36 @@ class TranscriptionServer implements MessageComponentInterface
         }
     }
 
+    protected function broadcastViewers(string $room): void
+    {
+        if (!isset($this->rooms[$room])) return;
+
+        $payload = json_encode(['viewers' => count($this->rooms[$room])]);
+
+        foreach ($this->rooms[$room] as $client) {
+            $client->send($payload);
+        }
+    }
 
     protected function addToRoom(ConnectionInterface $conn, string $room): void
     {
         $this->removeFromRoom($conn);
 
-        if (!isset($this->rooms[$room])) {
-            $this->rooms[$room] = new \SplObjectStorage;
-        }
+        $this->rooms[$room] ??= new \SplObjectStorage;
         $this->rooms[$room]->attach($conn);
         $conn->room = $room;
+
+        $this->broadcastViewers($room);
     }
+
 
     protected function removeFromRoom(ConnectionInterface $conn): void
     {
         if (!empty($conn->room) && isset($this->rooms[$conn->room])) {
             $this->rooms[$conn->room]->detach($conn);
-            if (count($this->rooms[$conn->room]) === 0) {
-                unset($this->rooms[$conn->room]);
-            }
+            $this->broadcastViewers($conn->room);
+
+            if (!count($this->rooms[$conn->room])) unset($this->rooms[$conn->room]);
             unset($conn->room);
         }
     }
