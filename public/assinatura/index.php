@@ -115,6 +115,12 @@ tailwind.config = { theme:{ fontFamily:{ sans:['Figtree','ui-sans-serif','system
 
   <h1 class="text-3xl font-bold mb-8">Assinatura</h1>
 
+    <?php if (isset($_GET['err']) && $_GET['err']==='noplan'): ?>
+        <div class="mb-6 p-4 bg-yellow-100 text-yellow-800 rounded-lg">
+        Você precisa assinar o plano <span class="font-bold">Pro</span> para criar salas.
+        </div>
+    <?php endif; ?>
+
   <div class="bg-white border border-slate-200 p-6 rounded-xl mb-10">
     <h2 class="text-xl font-semibold">Seu plano</h2>
     <p class="text-slate-600 mt-1 mb-6">

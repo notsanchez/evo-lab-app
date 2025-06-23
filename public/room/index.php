@@ -8,10 +8,14 @@ $userId = $_SESSION['user']['id'];
 $id    = $_GET['room'] ?? '';
 
 $latest = $pdo->prepare(
-    'SELECT id, name, status, created_at
-       FROM rooms
-      WHERE owner_id = ?
-   ORDER BY created_at DESC'
+    "SELECT id,
+               name,
+               description AS `desc`,
+               status,
+               created_at
+        FROM rooms
+        WHERE owner_id = ?
+        ORDER BY created_at DESC"
   );
 $latest->execute([$userId]);
 $rooms = $latest->fetchAll();
