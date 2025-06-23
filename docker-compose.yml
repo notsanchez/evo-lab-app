@@ -1,45 +1,56 @@
+name: evo-transcript
 services:
+  db:
+    environment:
+      MYSQL_DATABASE: evo
+      MYSQL_PASSWORD: senhaforte
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_USER: evo
+    image: mariadb:11
+    networks:
+      default: null
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: db_data
+        target: /var/lib/mysql
+        volume: {}
   web:
     build:
-      context: .
+      context: E:\dev2\dev\evo-transcript
       dockerfile: Dockerfile.web
-    restart: unless-stopped
     environment:
       DB_HOST: db
       DB_NAME: evo
-      DB_USER: evo
       DB_PASS: senhaforte
+      DB_USER: evo
     expose:
       - "80"
     labels:
-      - traefik.http.routers.web.rule=Host(`seusite.com`)
-      - traefik.http.routers.web.entrypoints=websecure
-      - traefik.http.routers.web.tls.certresolver=myresolver
-      - traefik.http.services.web.loadbalancer.server.port=80
-
+      traefik.http.routers.web.entrypoints: websecure
+      traefik.http.routers.web.rule: Host(`seusite.com`)
+      traefik.http.routers.web.tls.certresolver: myresolver
+      traefik.http.services.web.loadbalancer.server.port: "80"
+    networks:
+      default: null
+    restart: unless-stopped
   ws:
     build:
-      context: .
+      context: E:\dev2\dev\evo-transcript
       dockerfile: Dockerfile.ws
-    restart: unless-stopped
     expose:
       - "8080"
     labels:
-      - traefik.http.routers.ws.rule=Host(`ws.seusite.com`)
-      - traefik.http.routers.ws.entrypoints=websecure
-      - traefik.http.routers.ws.tls.certresolver=myresolver
-      - traefik.http.services.ws.loadbalancer.server.port=8080
-
-  db:
-    image: mariadb:11
+      traefik.http.routers.ws.entrypoints: websecure
+      traefik.http.routers.ws.rule: Host(`ws.seusite.com`)
+      traefik.http.routers.ws.tls.certresolver: myresolver
+      traefik.http.services.ws.loadbalancer.server.port: "8080"
+    networks:
+      default: null
     restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpass
-      MYSQL_DATABASE: evo
-      MYSQL_USER: evo
-      MYSQL_PASSWORD: senhaforte
-    volumes:
-      - db_data:/var/lib/mysql
-
+networks:
+  default:
+    name: evo-transcript_default
 volumes:
   db_data:
+    name: evo-transcript_db_data
