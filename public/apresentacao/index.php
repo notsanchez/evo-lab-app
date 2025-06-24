@@ -1,6 +1,4 @@
 <?php
-session_start();
-if (!isset($_SESSION['user'])) { header("Location: login"); exit; }
 require_once __DIR__.'/../../db.php';
 $pdo    = db();
 
