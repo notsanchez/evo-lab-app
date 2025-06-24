@@ -65,50 +65,69 @@ foreach ($rooms as $r) if ($r['id'] === $id) $room = $r;
   <h1 class="text-xs mt-6 text-center">Powered by <span class="text-blue-600">EVO</span></h1>
 
   <script>
-    (() => {
-      const room = new URL(location).searchParams.get('room');
-      if (!room) {
-        document.body.innerHTML = '<h2 class="text-xl font-semibold text-center mt-20">Sala não informada.</h2>';
-        return;
-      }
+(() => {
+  const room = new URL(location).searchParams.get('room');
+  if (!room) {
+    document.body.innerHTML =
+      '<h2 class="text-xl font-semibold text-center mt-20">Sala não informada.</h2>';
+    return;
+  }
+
+  const texto = document.getElementById('texto'); 
 
   const socket = new WebSocket("wss://evo-lab-evo-ws.gn1cmm.easypanel.host");
   socket.onopen = () => socket.send(JSON.stringify({ join: room }));
 
-      const texto = document.getElementById('texto');
-      const temp  = document.getElementById('temp');
+  let liveP       = null;
+  let lastPartial = '';
 
-      const PAUSE_MS = 1200;               
-      let lastFinalTime = Date.now();
+  socket.addEventListener('message', ({ data }) => {
+    const msg = JSON.parse(data);
+    if (!msg.text) return;
 
-      socket.addEventListener('message', (e) => {
-        const data = JSON.parse(e.data);
-        if (!data.text) return;
+    if (msg.final) {
+      if (!liveP) liveP = appendLine('');
+      liveP.textContent = msg.text;        
+      liveP.classList.remove('opacity-70');
+      liveP = null;
+      lastPartial = '';
+      scrollBottom();
+      return;
+    }
 
-        const now       = Date.now();
-        const longPause = now - lastFinalTime >= PAUSE_MS;
+    const t = msg.text;
 
-        if (data.final) {
-          lastFinalTime = now;
+    if (t === lastPartial) return;
 
-          const p = document.createElement('p');
-          p.textContent = data.text;
-          p.className = 'animate-fade';
-          texto.appendChild(p);
+    if (t.startsWith(lastPartial)) {
+      const suffix = t.slice(lastPartial.length);
+      if (!liveP) liveP = appendLine('');
+      liveP.textContent += suffix;
+    }
+    else {
+      if (!liveP) liveP = appendLine('');
+      liveP.textContent = t;
+    }
 
-          if (longPause) {
-            const br = document.createElement('br');
-            texto.appendChild(br);
-          }
+    lastPartial = t;
+    scrollBottom();
+  });
 
-          temp.textContent = '';
-        } else {
-          temp.textContent = data.text;
-        }
+  function appendLine(text) {
+    const p = document.createElement('p');
+    p.textContent = text;
+    p.className   = 'animate-fade opacity-70';
+    texto.appendChild(p);
+    return p;
+  }
 
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-      });
-    })();
-  </script>
+  function scrollBottom() {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  }
+
+})();
+</script>
+
+
 </body>
 </html>

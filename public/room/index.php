@@ -161,71 +161,82 @@ $active = 'salas';
   </section>
 </main>
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const room = "<?php echo $room['id']; ?>";
+document.addEventListener('DOMContentLoaded', async () => {
+  const room   = "<?= $room['id']; ?>";
+  const btn    = document.getElementById('btnStart');
+  const SR     = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { alert('Browser sem Web Speech API'); btn.disabled = true; return; }
 
-  const btn   = document.getElementById('btnStart');
-  const stat  = document.getElementById('status');
+
+  try {
+    await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true }
+    });
+  } catch(e) {
+    console.warn('getUserMedia falhou:', e);
+  }
 
   const socket = new WebSocket("wss://evo-lab-evo-ws.gn1cmm.easypanel.host");
   socket.addEventListener('open', () => socket.send(JSON.stringify({ join: room })));
-
   socket.addEventListener('message', e => {
-        const data = JSON.parse(e.data);
-        if (data.viewers !== undefined) {
-            document.getElementById('spectatorsCount').textContent =
-            (data.viewers - 1) + ((data.viewers - 1) === 1 ? ' ativo' : ' ativos');
-        }
-    });
-
-
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { alert('Browser sem Web Speech API'); btn.disabled = true; return; }
-
-  const rec = new SR();
-  rec.lang = 'pt-BR';
-  rec.interimResults = true;
-  rec.continuous = true;
-
-  let isRecording = false;
-
-  btn.addEventListener('click', () => {
-    if (!isRecording) {
-      if (socket.readyState !== 1) { alert('WebSocket conectando…'); return; }
-      rec.start();
-      isRecording = true;
-      btn.textContent = 'Parar transcrição';
-      btn.classList.replace('bg-green-600', 'bg-red-600');
-      btn.classList.replace('hover:bg-green-700', 'hover:bg-red-700');
-      stat && (stat.textContent = 'Capturando áudio — fale à vontade');
-    } else {
-      rec.stop();
-      finish();
+    const d = JSON.parse(e.data);
+    if (d.viewers !== undefined) {
+      document.getElementById('spectatorsCount').textContent =
+        (d.viewers - 1) + ((d.viewers - 1) === 1 ? ' ativo' : ' ativos');
     }
   });
+
+  const rec = new SR();
+  rec.lang            = 'pt-BR';
+  rec.continuous      = true;
+  rec.interimResults  = true;
+  rec.maxAlternatives = 5;
+
+  const SRList  = window.SpeechGrammarList || window.webkitSpeechGrammarList;
+  if (SRList) {
+    const list    = new SRList();
+    const grammar = `
+      #JSGF V1.0 pt-BR;
+      grammar evo;
+      public <frase> =
+        iniciar transcrição | parar transcrição | próximo slide | voltar | resumo ;
+      `;
+    list.addFromString(grammar, 1);
+    rec.grammars = list;
+  }
+
+  let isRecording = false;
+  btn.addEventListener('click', () => {
+    if (!isRecording) startRec(); else stopRec();
+  });
+
+  function startRec(){
+    if (socket.readyState !== 1){ alert('WebSocket conectando…'); return; }
+    rec.start();
+    isRecording = true;
+    btn.textContent = 'Parar transcrição';
+    btn.classList.replace('bg-green-600','bg-red-600');
+    btn.classList.replace('hover:bg-green-700','hover:bg-red-700');
+  }
+  function stopRec(){
+    rec.stop();
+    isRecording = false;
+    btn.textContent = 'Iniciar transcrição';
+    btn.classList.replace('bg-red-600','bg-green-600');
+    btn.classList.replace('hover:bg-red-700','hover:bg-green-700');
+  }
 
   rec.addEventListener('result', e => {
     for (let i = e.resultIndex; i < e.results.length; i++) {
-      const r = e.results[i];
-      const text = r[0].transcript.trim();
-      if (text && socket.readyState === 1) {
-        socket.send(JSON.stringify({ text, final: r.isFinal }));
+      const alts = [...e.results[i]].sort((a,b)=>b.confidence-a.confidence);
+      const best = alts[0];
+      const text = best.transcript.trim();
+      if (text && socket.readyState === 1){
+        socket.send(JSON.stringify({ text, final: e.results[i].isFinal }));
       }
     }
   });
-
-  rec.addEventListener('end', () => {
-    if (isRecording) rec.start();
-  });
-
-  function finish() {
-    isRecording = false;
-    btn.textContent = 'Iniciar transcrição';
-    btn.classList.replace('bg-red-600', 'bg-green-600');
-    btn.classList.replace('hover:bg-red-700', 'hover:bg-green-700');
-    stat && (stat.textContent = 'Captura encerrada');
-  }
-
+  rec.addEventListener('end', () => { if (isRecording) rec.start(); });
 });
 </script>
 </body>
